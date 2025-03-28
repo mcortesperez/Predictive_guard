@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-driven machine failure</title>
+    <link rel="stylesheet" href="{{url_for('static', filename = 'style.css')}}">
+</head>
+<body>
+    <h1>predictiveguard</h1>
+    <form class="form-container" id="formulario_prediccion">
+        <label for="temperature">Temperature:</label>
+        <input type="number" id="temperature" name="temperature"><br><br>
+        <label for="pressure">Pressure:</label>
+        <input type="number" id="pressure" name="pressure"><br><br>
+        <label for="vibration">Vibration:</label>
+        <input type="number" id="vibration" name="vibration"><br><br>
+        <label for="humidity">Humidity:</label>
+        <input type="number" id="humidity" name="humidity"><br><br>
+
+        <button type="button" class="collapsible">Select equipment</button>
+        <div class="content">
+            <input type="radio" id="equipment_turbine" name="equipment" value="turbine">
+            <label for="equipment_turbine">Turbine</label><br>
+            <input type="radio" id="equipment_pump" name="equipment" value="pump">
+            <label for="equipment_pump">Pump</label><br>
+            <input type="radio" id="equipment_compressor" name="equipment" value="compressor">
+            <label for="equipment_compressor">Compressor</label><br>
+        </div>
+
+        <button type="button" onclick="realizarPrediccion()">Predict</button>
+    </form>
+    <div id="resultado"></div>
+    <script>
+        function realizarPrediccion() {
+            const temperature = document.getElementById('temperature').value;
+            const pressure = document.getElementById('pressure').value;
+            const vibration = document.getElementById('vibration').value;
+            const humidity = document.getElementById('humidity').value;
+
+            // Obtener el equipo seleccionado
+            const selectedEquipment = document.querySelector('input[name="equipment"]:checked');
+            let equipment_turbine = 0;
+            let equipment_pump = 0;
+            let equipment_compressor = 0;
+            let equipmentType = '';
+
+            if (selectedEquipment) {
+                if (selectedEquipment.value === 'turbine') {
+                    equipment_turbine = 1;
+                    equipmentType = 'turbine';
+                } else if (selectedEquipment.value === 'pump') {
+                    equipment_pump = 1;
+                    equipmentType = 'pump';
+                } else if (selectedEquipment.value === 'compressor') {
+                    equipment_compressor = 1;
+                    equipmentType = 'compressor';
+                }
+            }
+
+            fetch('/predecir', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    temperature: parseFloat(temperature),
+                    pressure: parseFloat(pressure),
+                    vibration: parseFloat(vibration),
+                    humidity: parseFloat(humidity),
+                    equipment_turbine: equipment_turbine,
+                    equipment_pump: equipment_pump,
+                    equipment_compressor: equipment_compressor
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                let resultadoTexto = '';
+                if (data.resultado == 1) {
+                    resultadoTexto = `Under the given conditions, it is predicted that the ${equipmentType} will fail.`;
+                } else {
+                    resultadoTexto = `Under the given conditions, it is not predicted that the ${equipmentType} will fail.`;
+                }
+                document.getElementById('resultado').textContent = 'Result: ' + resultadoTexto;
+            });
+        }
+        var coll = document.querySelector(".collapsible");
+        coll.addEventListener("click", function() {
+            this.classList.toggle("active");
+            var content = this.nextElementSibling;
+            if (content.style.display === "block") {
+                content.style.display = "none";
+            } else {
+                content.style.display = "block";
+            }
+        });
+    </script>
+</body>
+</html>
